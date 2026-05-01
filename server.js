@@ -11,6 +11,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const TEMP_DIR = process.env.RENDER ? '/tmp' : path.join(__dirname, 'temp');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '2mb' }));
@@ -218,7 +219,6 @@ async function callAI(prompt, apiKey, retries = 3) {
         }
       );
       const raw = response.data.choices[0].message.content.trim();
-      // Strip markdown code fences if present
       const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
       return JSON.parse(cleaned);
     } catch (err) {
@@ -392,7 +392,8 @@ async function writePage(outDir, relativePath, aiData, tplName, extraVars) {
 // ─── Main Generator ───────────────────────────────────────────────────────────
 async function generateSite(inputData, apiKey, progressCb) {
   const jobId = uuidv4();
-  const outDir = path.join(__dirname, 'temp', jobId, 'site');
+  // ✅ FIXED: Use TEMP_DIR instead of __dirname/temp
+  const outDir = path.join(TEMP_DIR, jobId, 'site');
   await fs.ensureDir(path.join(outDir, 'services'));
   await fs.ensureDir(path.join(outDir, 'locations'));
   await fs.ensureDir(path.join(outDir, 'assets'));
@@ -480,7 +481,6 @@ async function generateSite(inputData, apiKey, progressCb) {
     const breadcrumb = buildBreadcrumb([{ label: 'Home', url: '/' }, { label: 'Services', url: '#' }, { label: service }]);
     const cta = randomCTA(data.businessName, data.phone, service, data.mainCity);
 
-    // Internal links to other services
     const relatedLinks = services
       .filter(s => s !== service)
       .slice(0, 5)
@@ -508,7 +508,6 @@ async function generateSite(inputData, apiKey, progressCb) {
     const breadcrumb = buildBreadcrumb([{ label: 'Home', url: '/' }, { label: 'Locations', url: '#' }, { label: location }]);
     const cta = randomCTA(data.businessName, data.phone, data.mainService, location);
 
-    // Links back to main city + services
     const cityLink = location !== data.mainCity
       ? `<p>Serving <a href="/locations/${slugify(data.mainCity)}.html">${data.mainCity}</a> and surrounding areas.</p>`
       : '';
@@ -535,7 +534,8 @@ async function generateSite(inputData, apiKey, progressCb) {
   await fs.writeFile(path.join(outDir, 'robots.txt'), buildRobots(), 'utf8');
 
   // ── ZIP ──
-  const zipPath = path.join(__dirname, 'temp', jobId, `${slugify(data.businessName)}-website.zip`);
+  // ✅ FIXED: Use TEMP_DIR instead of __dirname/temp
+  const zipPath = path.join(TEMP_DIR, jobId, `${slugify(data.businessName)}-website.zip`);
   await new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -608,7 +608,6 @@ app.post('/generate-site', async (req, res) => {
 
   // Run in background
   setImmediate(async () => {
-    const sendProgress = progressMap.get(jobId);
     try {
       const progressCb = ({ done, total, label }) => {
         const sender = progressMap.get(jobId);
@@ -623,9 +622,9 @@ app.post('/generate-site', async (req, res) => {
       // Store zip path for download
       progressMap.set(`zip_${jobId}`, zipPath);
 
-      // Auto-cleanup after 30 minutes
+      // ✅ FIXED: Use TEMP_DIR for cleanup
       setTimeout(async () => {
-        await fs.remove(path.join(__dirname, 'temp', jobId));
+        await fs.remove(path.join(TEMP_DIR, jobId));
         progressMap.delete(`zip_${jobId}`);
       }, 30 * 60 * 1000);
 
@@ -649,5 +648,6 @@ app.get('/download/:jobId', (req, res) => {
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`\n🚀 Local Site Generator running at http://localhost:${PORT}\n`);
-  fs.ensureDir(path.join(__dirname, 'temp'));
+  // ✅ FIXED: Use TEMP_DIR for temp folder creation
+  fs.ensureDir(TEMP_DIR);
 });
