@@ -1,0 +1,789 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Local Site Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #ff3e3e;
+      --accent2: #ff6b35;
+      --text: #f0f0f0;
+      --muted: #888;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,62,62,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,62,62,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ─ Header ─ */
+    .header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,62,62,0.1);
+      border: 1px solid rgba(255,62,62,0.3);
+      padding: 0.4rem 1.2rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    .header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      background: linear-gradient(135deg, #fff 30%, #ff3e3e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    .header p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 580px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    /* ─ Stats row ─ */
+    .stats {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 2rem 0 3rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ─ Card ─ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1a0a0a, var(--surface2));
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .card-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-header p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.1rem;
+    }
+
+    /* ─ Form ─ */
+    .form-body {
+      padding: 2rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .form-body { padding: 1.2rem; }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    label .req {
+      color: var(--accent);
+      margin-left: 2px;
+    }
+
+    input, textarea, select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      padding: 0.7rem 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      width: 100%;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,62,62,0.1);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #444;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    select option { background: #1a1a1a; }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 0.2rem;
+    }
+
+    /* ─ Divider ─ */
+    .section-divider {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.5rem 0;
+    }
+
+    .section-divider span {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .section-divider::before, .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ─ API Key section ─ */
+    .api-section {
+      background: rgba(255,62,62,0.05);
+      border: 1px solid rgba(255,62,62,0.15);
+      border-radius: 10px;
+      padding: 1.2rem;
+      grid-column: 1 / -1;
+    }
+
+    .api-section label {
+      color: #ff8080;
+    }
+
+    /* ─ Generate Button ─ */
+    .generate-btn {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.5px;
+    }
+
+    .generate-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0);
+      transition: background 0.2s;
+    }
+
+    .generate-btn:hover:not(:disabled)::before { background: rgba(255,255,255,0.1); }
+    .generate-btn:active:not(:disabled) { transform: scale(0.99); }
+    .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ─ Progress Card ─ */
+    .progress-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .progress-card.visible { display: block; }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .progress-count {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .progress-log {
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      scrollbar-width: thin;
+      scrollbar-color: #333 transparent;
+    }
+
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      color: var(--muted);
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .log-item.active { color: #fff; }
+    .log-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    .log-item.active .dot { background: var(--success); box-shadow: 0 0 6px var(--success); }
+
+    /* ─ Spinner ─ */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─ Success State ─ */
+    .success-card {
+      background: linear-gradient(135deg, #0a1a0a, #0d2010);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-top: 2rem;
+      text-align: center;
+      display: none;
+    }
+
+    .success-card.visible { display: block; }
+
+    .success-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .success-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.6rem;
+      color: var(--success);
+      margin-bottom: 0.5rem;
+    }
+
+    .success-card p {
+      color: #6ee7b7;
+      margin-bottom: 1.5rem;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--success);
+      color: #000;
+      padding: 0.9rem 2.5rem;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .download-btn:hover { background: #16a34a; transform: translateY(-2px); }
+
+    /* ─ Error ─ */
+    .error-banner {
+      background: rgba(255,62,62,0.1);
+      border: 1px solid rgba(255,62,62,0.3);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-top: 1.5rem;
+      color: #ff8080;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .error-banner.visible { display: block; }
+
+    /* ─ Features strip ─ */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+
+    .feature-icon { font-size: 1.4rem; margin-bottom: 0.5rem; }
+    .feature h3 { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 700; margin-bottom: 0.3rem; }
+    .feature p { font-size: 0.78rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+
+    <div class="header">
+      <div class="logo-badge">⚡ AI-Powered</div>
+      <h1>Local Site Generator</h1>
+      <p>Enter your business details and instantly generate a 30–50 page SEO-optimized website, ready to upload and rank.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">30–50</div>
+        <div class="stat-label">Pages Generated</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Unique Content</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">SEO</div>
+        <div class="stat-label">Optimized</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">ZIP</div>
+        <div class="stat-label">Instant Download</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-icon">🏢</div>
+        <div>
+          <h2>Business Details</h2>
+          <p>Fill in the form below to generate your website</p>
+        </div>
+      </div>
+
+      <div class="form-body">
+        <form id="genForm">
+          <div class="form-grid">
+
+            <!-- Business Info -->
+            <div class="section-divider"><span>Business Info</span></div>
+
+            <div class="form-group">
+              <label>Business Name <span class="req">*</span></label>
+              <input type="text" id="businessName" placeholder="Smith's Roofing Co." required>
+            </div>
+
+            <div class="form-group">
+              <label>Main Service <span class="req">*</span></label>
+              <input type="text" id="mainService" placeholder="Roofing" required>
+            </div>
+
+            <div class="form-group">
+              <label>Phone Number <span class="req">*</span></label>
+              <input type="text" id="phone" placeholder="(555) 123-4567" required>
+            </div>
+
+            <div class="form-group">
+              <label>Email <span class="req">*</span></label>
+              <input type="email" id="email" placeholder="info@business.com" required>
+            </div>
+
+            <!-- Location -->
+            <div class="section-divider"><span>Location</span></div>
+
+            <div class="form-group">
+              <label>Main City <span class="req">*</span></label>
+              <input type="text" id="mainCity" placeholder="Denver" required>
+            </div>
+
+            <div class="form-group">
+              <label>State / Province</label>
+              <input type="text" id="state" placeholder="Colorado">
+            </div>
+
+            <div class="form-group">
+              <label>Country <span class="req">*</span></label>
+              <input type="text" id="country" placeholder="USA" required>
+            </div>
+
+            <div class="form-group">
+              <label>Brand Tone</label>
+              <select id="tone">
+                <option value="Professional">Professional</option>
+                <option value="Friendly">Friendly</option>
+                <option value="Premium">Premium</option>
+              </select>
+            </div>
+
+            <div class="form-group full">
+              <label>Additional Locations</label>
+              <input type="text" id="additionalLocations" placeholder="Aurora, Lakewood, Centennial, Boulder, Arvada">
+              <span class="hint">Comma-separated. Up to 25 additional cities generate location pages.</span>
+            </div>
+
+            <!-- Services & Details -->
+            <div class="section-divider"><span>Services & Details</span></div>
+
+            <div class="form-group full">
+              <label>Services List <span class="req">*</span></label>
+              <input type="text" id="services" placeholder="Roof Repair, Roof Replacement, Flat Roofing, Gutter Installation, Emergency Repairs" required>
+              <span class="hint">Comma-separated. Each service gets its own page.</span>
+            </div>
+
+            <div class="form-group full">
+              <label>Unique Selling Points</label>
+              <textarea id="usp" placeholder="24/7 emergency service, GAF certified installer, 10-year workmanship warranty, family owned since 1998, free same-day estimates"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Years of Experience</label>
+              <input type="number" id="yearsExp" placeholder="12" min="1" max="100" value="10">
+            </div>
+
+            <!-- API Key -->
+            <div class="section-divider"><span>API Configuration</span></div>
+
+            <div class="api-section">
+              <div class="form-group">
+                <label>OpenRouter API Key <span class="req">*</span></label>
+                <input type="password" id="apiKey" placeholder="sk-or-v1-..." required>
+                <span class="hint" style="color:#ff6060;">Your key is sent directly to OpenRouter and not stored. Get one at openrouter.ai — uses gpt-4o-mini, ~$0.05–0.20 per full site.</span>
+              </div>
+            </div>
+
+          </div><!-- /form-grid -->
+
+          <button type="submit" class="generate-btn" id="genBtn">
+            ⚡ Generate My Website (30–50 Pages)
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Progress Card -->
+    <div class="progress-card" id="progressCard">
+      <div class="progress-header">
+        <div class="progress-title">
+          <span class="spinner" style="vertical-align:middle;margin-right:0.5rem;"></span>
+          Generating your website...
+        </div>
+        <div class="progress-count" id="progressCount">0 / 0</div>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-log" id="progressLog"></div>
+    </div>
+
+    <!-- Error Banner -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Success Card -->
+    <div class="success-card" id="successCard">
+      <div class="success-icon">🎉</div>
+      <h2>Your Website is Ready!</h2>
+      <p>All pages have been generated with unique SEO content. Upload the ZIP to your hosting provider.</p>
+      <a href="#" class="download-btn" id="downloadBtn">⬇️ Download Website ZIP</a>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">📄</div>
+        <h3>30–50 Pages</h3>
+        <p>Core, service, and location pages — all unique</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔍</div>
+        <h3>SEO Ready</h3>
+        <p>Schema markup, meta tags, sitemaps, robots.txt</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔗</div>
+        <h3>Internal Linking</h3>
+        <p>Pages automatically cross-link for SEO power</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <h3>Mobile Responsive</h3>
+        <p>All templates look great on any device</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Instant ZIP</h3>
+        <p>Download and upload to any web host</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🤖</div>
+        <h3>AI Content</h3>
+        <p>Each page uniquely written by GPT-4o-mini</p>
+      </div>
+    </div>
+
+  </div><!-- /wrapper -->
+
+  <script>
+    const form = document.getElementById('genForm');
+    const genBtn = document.getElementById('genBtn');
+    const progressCard = document.getElementById('progressCard');
+    const progressBar = document.getElementById('progressBar');
+    const progressCount = document.getElementById('progressCount');
+    const progressLog = document.getElementById('progressLog');
+    const errorBanner = document.getElementById('errorBanner');
+    const successCard = document.getElementById('successCard');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    function showError(msg) {
+      errorBanner.textContent = '⚠️ ' + msg;
+      errorBanner.classList.add('visible');
+      setTimeout(() => errorBanner.classList.remove('visible'), 8000);
+    }
+
+    function addLog(label, active = true) {
+      const item = document.createElement('div');
+      item.className = 'log-item' + (active ? ' active' : '');
+      item.innerHTML = `<span class="dot"></span> ${label}`;
+      progressLog.prepend(item);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      errorBanner.classList.remove('visible');
+      successCard.classList.remove('visible');
+
+      const payload = {
+        businessName: document.getElementById('businessName').value.trim(),
+        mainService: document.getElementById('mainService').value.trim(),
+        mainCity: document.getElementById('mainCity').value.trim(),
+        state: document.getElementById('state').value.trim(),
+        country: document.getElementById('country').value.trim(),
+        additionalLocations: document.getElementById('additionalLocations').value.trim(),
+        services: document.getElementById('services').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        usp: document.getElementById('usp').value.trim(),
+        yearsExp: document.getElementById('yearsExp').value.trim(),
+        tone: document.getElementById('tone').value,
+        apiKey: document.getElementById('apiKey').value.trim(),
+      };
+
+      genBtn.disabled = true;
+      genBtn.textContent = '⚙️ Generating...';
+      progressCard.classList.add('visible');
+      progressLog.innerHTML = '';
+
+      try {
+        const res = await fetch('/generate-site', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Server error');
+        }
+
+        const { jobId } = await res.json();
+
+        // Open SSE stream for progress
+        const es = new EventSource(`/progress/${jobId}`);
+
+        es.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+
+          if (data.status === 'generating') {
+            const pct = Math.round((data.done / data.total) * 100);
+            progressBar.style.width = pct + '%';
+            progressCount.textContent = `${data.done} / ${data.total} pages`;
+            addLog(data.label);
+          }
+
+          if (data.status === 'done') {
+            es.close();
+            progressBar.style.width = '100%';
+            progressCount.textContent = 'Complete!';
+            addLog('✅ Website generation complete!');
+
+            setTimeout(() => {
+              progressCard.classList.remove('visible');
+              successCard.classList.add('visible');
+              downloadBtn.href = data.downloadUrl;
+              genBtn.disabled = false;
+              genBtn.textContent = '⚡ Generate My Website (30–50 Pages)';
+            }, 800);
+          }
+
+          if (data.status === 'error') {
+            es.close();
+            progressCard.classList.remove('visible');
+            showError(data.error || 'Generation failed. Check your API key and try again.');
+            genBtn.disabled = false;
+            genBtn.textContent = '⚡ Generate My Website (30–50 Pages)';
+          }
+        };
+
+        es.onerror = () => {
+          es.close();
+          // SSE closed — might be done
+        };
+
+      } catch (err) {
+        showError(err.message);
+        progressCard.classList.remove('visible');
+        genBtn.disabled = false;
+        genBtn.textContent = '⚡ Generate My Website (30–50 Pages)';
+      }
+    });
+  </script>
+</body>
+</html>
